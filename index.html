@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<meta name="description" content="Công cụ trắc đạc: tính tọa độ, khoảng cách, phương vị và diện tích thửa đất.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Trắc Đạc Mini</title>
+<style>
+:root{--green:#14532d;--green2:#166534;--bg:#f3f6f4;--card:#fff;--ink:#17221b;--muted:#5d6b61;--line:#d8e2da;--accent:#dcfce7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px}
+header{background:var(--green);color:#fff;padding:20px 16px 16px;padding-top:calc(18px + env(safe-area-inset-top))}
+header h1{font-size:1.35rem;margin:0 0 5px}header p{margin:0;color:#d9fbe5;font-size:.92rem}
+main{max-width:760px;margin:auto;padding:14px 12px 32px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:13px}
+nav button{border:1px solid var(--line);background:#fff;color:var(--green);padding:11px 5px;border-radius:12px;font-weight:700;font-size:.88rem}
+nav button.active{background:var(--green);color:white;border-color:var(--green)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:13px;box-shadow:0 2px 7px #163a2410}
+h2{font-size:1.08rem;margin:0 0 13px}h3{font-size:.98rem;margin:16px 0 8px}
+label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:5px}
+input,textarea,select{font:inherit;width:100%;border:1px solid #bccbc0;border-radius:10px;padding:11px 10px;background:#fff;color:var(--ink);min-width:0}
+textarea{min-height:145px;resize:vertical;line-height:1.45}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{margin-bottom:11px}
+button.action{background:var(--green2);border:0;color:white;font-weight:750;border-radius:11px;padding:12px 14px;font-size:.96rem}
+button.secondary{background:#fff;border:1px solid var(--line);color:var(--green);font-weight:700;border-radius:11px;padding:10px 12px}
+button.danger{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.result{margin-top:13px;background:#effcf3;border:1px solid #bbebc8;border-radius:12px;padding:13px}
+.result .big{font-size:1.45rem;font-weight:800;color:var(--green);overflow-wrap:anywhere}
+.small{font-size:.84rem;color:var(--muted);line-height:1.45}
+.note{background:#fff8e6;border:1px solid #f3dfa0;border-radius:10px;padding:11px;font-size:.88rem;line-height:1.45}
+.hidden{display:none!important}
+.tablewrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:right;white-space:nowrap}th{background:#f0f5f1;color:var(--green)}th:first-child,td:first-child{text-align:center}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px}
+#status{font-size:.85rem;color:#dcfce7;margin-top:6px}
+@media(min-width:600px){main{padding:20px}header{padding-left:max(20px,calc((100vw - 720px)/2))}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📐 Trắc Đạc Mini</h1>
+  <p>Tọa độ · Khoảng cách · Phương vị · Diện tích</p>
+  <div id="status">Công cụ tính toán từ tọa độ nhập vào</div>
+</header>
+<main>
+<nav aria-label="Chức năng">
+  <button class="active" data-tab="distance">Khoảng cách</button>
+  <button data-tab="area">Diện tích</button>
+  <button data-tab="points">Danh sách điểm</button>
+</nav>
+
+<section id="distance" class="tab">
+  <div class="card">
+    <h2>1. Tính khoảng cách và phương vị</h2>
+    <div class="grid2">
+      <div class="field"><label for="x1">X điểm 1 (m)</label><input id="x1" inputmode="decimal" value="1000"></div>
+      <div class="field"><label for="y1">Y điểm 1 (m)</label><input id="y1" inputmode="decimal" value="2000"></div>
+      <div class="field"><label for="x2">X điểm 2 (m)</label><input id="x2" inputmode="decimal" value="1030"></div>
+      <div class="field"><label for="y2">Y điểm 2 (m)</label><input id="y2" inputmode="decimal" value="2040"></div>
+    </div>
+    <button class="action" id="calcDistance">Tính kết quả</button>
+    <div id="distanceResult" class="result hidden" aria-live="polite"></div>
+    <p class="small">Quy ước phương vị trong ứng dụng: đo từ trục +X theo chiều kim đồng hồ; giả sử X là Bắc, Y là Đông. Nếu hệ tọa độ của bạn quy ước khác, hãy đổi cách diễn giải phương vị.</p>
+  </div>
+</section>
+
+<section id="area" class="tab hidden">
+  <div class="card">
+    <h2>2. Tính diện tích đa giác bằng tọa độ</h2>
+    <p class="small">Nhập mỗi đỉnh trên một dòng theo thứ tự đi quanh thửa đất. Định dạng: <b>Tên X Y</b> hoặc <b>X Y</b>. Dùng dấu cách, tab hoặc dấu phẩy để phân cách. Không cần lặp lại điểm đầu ở cuối.</p>
+    <div class="field"><label for="areaPoints">Danh sách đỉnh</label><textarea id="areaPoints" spellcheck="false">A 1000 2000
+B 1000 2050
+C 1040 2050
+D 1040 2000</textarea></div>
+    <button class="action" id="calcArea">Tính diện tích</button>
+    <div id="areaResult" class="result hidden" aria-live="polite"></div>
+    <div class="note">Kiểm tra tọa độ trước khi dùng kết quả cho hồ sơ chính thức. Diện tích được tính theo đơn vị m² nếu tọa độ đầu vào tính bằng mét.</div>
+  </div>
+</section>
+
+<section id="points" class="tab hidden">
+  <div class="card">
+    <h2>3. Nhập danh sách tọa độ</h2>
+    <p class="small">Mỗi dòng nhập <b>Tên X Y</b> hoặc <b>X Y</b>. Ví dụ: M1 1234.567 2345.678. Có thể dùng dấu phẩy để ngăn cách phần thập phân hoặc cột, nhưng không nên trộn lẫn.</p>
+    <div class="field"><label for="pointInput">Dữ liệu tọa độ</label><textarea id="pointInput" spellcheck="false" placeholder="M1 1000.000 2000.000&#10;M2 1030.000 2040.000"></textarea></div>
+    <div class="actions">
+      <button class="action" id="loadPoints">Tạo bảng tọa độ</button>
+      <button class="secondary" id="examplePoints">Nạp ví dụ</button>
+      <button class="secondary" id="exportCsv">Xuất CSV</button>
+      <button class="secondary danger" id="clearPoints">Xóa bảng</button>
+    </div>
+    <div id="pointMessage" class="small" style="margin-top:10px" aria-live="polite"></div>
+  </div>
+  <div class="card">
+    <h2>Bảng tọa độ</h2>
+    <div id="pointTable" class="tablewrap small">Chưa có dữ liệu.</div>
+  </div>
+</section>
+<footer>Trắc Đạc Mini · Kết quả phụ thuộc vào dữ liệu và quy ước tọa độ nhập vào.</footer>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+function num(id){
+  const s=$(id).value.trim().replace(",",".");
+  if(!s) throw new Error("Vui lòng nhập đủ tọa độ.");
+  const n=Number(s);
+  if(!Number.isFinite(n)) throw new Error("Tọa độ không hợp lệ: "+$(id).value);
+  return n;
+}
+function fmt(n, digits=3){return n.toLocaleString("vi-VN",{minimumFractionDigits:digits,maximumFractionDigits:digits});}
+function showError(el, message){el.classList.remove("hidden");el.innerHTML='<span style="color:#9f1239;font-weight:700"></span>';el.firstChild.textContent=message;}
+function parseRows(raw){
+  const rows=[], errors=[];
+  raw.split(/\r?\n/).forEach((line,i)=>{
+    line=line.trim(); if(!line || line.startsWith("#")) return;
+    let parts=line.includes(",") ? line.split(",").map(s=>s.trim()).filter(Boolean) : line.split(/\s+/);
+    // Hỗ trợ dạng "Tên X Y" hoặc "X Y". Dấu phẩy phân cách cột; số thập phân nên dùng dấu chấm.
+    let name,x,y;
+    if(parts.length>=3){name=parts.slice(0,parts.length-2).join(" ");x=parts[parts.length-2];y=parts[parts.length-1];}
+    else if(parts.length===2){name="P"+(rows.length+1);x=parts[0];y=parts[1];}
+    else {errors.push("Dòng "+(i+1)+": cần ít nhất 2 tọa độ.");return;}
+    x=Number(String(x).replace(",", ".")); y=Number(String(y).replace(",", "."));
+    if(!Number.isFinite(x)||!Number.isFinite(y)){errors.push("Dòng "+(i+1)+": tọa độ không hợp lệ.");return;}
+    rows.push({name,x,y});
+  });
+  if(errors.length) throw new Error(errors.join(" "));
+  if(rows.length<2) throw new Error("Cần ít nhất 2 điểm.");
+  return rows;
+}
+document.querySelectorAll("nav button").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b===btn));
+  document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("hidden",s.id!==btn.dataset.tab));
+}));
+$("calcDistance").addEventListener("click",()=>{
+  const out=$("distanceResult");
+  try{
+    const x1=num("x1"),y1=num("y1"),x2=num("x2"),y2=num("y2");
+    const dx=x2-x1,dy=y2-y1,d=Math.hypot(dx,dy);
+    let az=Math.atan2(dy,dx)*180/Math.PI;if(az<0)az+=360;
+    out.classList.remove("hidden");
+    out.innerHTML=`<div class="small">Khoảng cách ngang</div><div class="big">${fmt(d,3)} m</div>
+      <div>ΔX = ${fmt(dx,3)} m</div><div>ΔY = ${fmt(dy,3)} m</div>
+      <div>Phương vị = ${fmt(az,4)}°</div>`;
+  }catch(e){showError(out,e.message);}
+});
+$("calcArea").addEventListener("click",()=>{
+  const out=$("areaResult");
+  try{
+    const pts=parseRows($("areaPoints").value);
+    let sum=0;
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i],b=pts[(i+1)%pts.length];
+      sum+=a.x*b.y-b.x*a.y;
+    }
+    const area=Math.abs(sum)/2;
+    out.classList.remove("hidden");
+    out.innerHTML=`<div class="small">Số đỉnh: ${pts.length}</div><div class="big">${fmt(area,3)} m²</div><div>${fmt(area/10000,5)} ha</div>`;
+  }catch(e){showError(out,e.message);}
+});
+let loadedPoints=[];
+function renderPoints(rows){
+  loadedPoints=rows;
+  $("pointTable").innerHTML="";
+  const table=document.createElement("table");
+  const thead=document.createElement("thead"),tr=document.createElement("tr");
+  ["STT","Tên điểm","X (m)","Y (m)"].forEach(t=>{const th=document.createElement("th");th.textContent=t;tr.appendChild(th);});
+  thead.appendChild(tr);table.appendChild(thead);
+  const tbody=document.createElement("tbody");
+  rows.forEach((p,i)=>{const r=document.createElement("tr");[String(i+1),p.name,fmt(p.x,3),fmt(p.y,3)].forEach(v=>{const td=document.createElement("td");td.textContent=v;r.appendChild(td);});tbody.appendChild(r);});
+  table.appendChild(tbody);$("pointTable").appendChild(table);
+  $("pointMessage").textContent="Đã nạp "+rows.length+" điểm.";
+}
+$("loadPoints").addEventListener("click",()=>{
+  try{renderPoints(parseRows($("pointInput").value));}
+  catch(e){$("pointMessage").textContent=e.message;loadedPoints=[];}
+});
+$("examplePoints").addEventListener("click",()=>{
+  $("pointInput").value="M1 1000.000 2000.000\nM2 1030.000 2040.000\nM3 1050.000 2010.000";
+  $("loadPoints").click();
+});
+$("clearPoints").addEventListener("click",()=>{
+  loadedPoints=[];$("pointInput").value="";$("pointTable").textContent="Chưa có dữ liệu.";$("pointMessage").textContent="Đã xóa bảng.";
+});
+$("exportCsv").addEventListener("click",()=>{
+  if(!loadedPoints.length){$("pointMessage").textContent="Hãy tạo bảng tọa độ trước khi xuất.";return;}
+  const lines=[["STT","Ten diem","X (m)","Y (m)"].join(";")];
+  loadedPoints.forEach((p,i)=>lines.push([i+1,'"'+p.name.replace(/"/g,'""')+'"',p.x,p.y].join(";")));
+  const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="bang_toa_do.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  $("pointMessage").textContent="Đã tạo tệp CSV để tải xuống.";
+});
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
